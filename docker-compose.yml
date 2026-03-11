@@ -9,6 +9,11 @@ services:
       - ./models:/models:ro
     restart: unless-stopped
     command: ["serve"]
+    logging: &default-logging
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"   #logs update
     healthcheck:
       test: ["CMD", "ollama", "list"]
       interval: 5s
@@ -29,6 +34,7 @@ services:
       - ./logs/ollama:/logs
       - ./docker/loader/import_models.sh:/import_models.sh:ro
       - ./ollama:/root/.ollama
+    logging: *default-logging
     restart: "no"
     entrypoint: ["/bin/sh", "/import_models.sh"]
 
@@ -40,6 +46,7 @@ services:
     volumes:
       - ./vectordb:/vectordb:ro
       - ./logs/rag:/logs
+    logging: *default-logging
     restart: unless-stopped
 
   ollama-proxy:
@@ -54,6 +61,7 @@ services:
         #- RAG_TOP_K=5
     volumes:
       - ./ollama/infer_ollama.py:/app/app.py:ro
+      - ./logs/ollama:/logs
     working_dir: /app
     command: >
       sh -lc "pip install --no-cache-dir fastapi uvicorn httpx &&
@@ -74,5 +82,7 @@ services:
       - WEBUI_SECRET_KEY=training_secret
     volumes:
       - ./open-webui-data:/app/backend/data
+      - ./logs/docker:/var/log/webui # Optional: map internal logs
+    logging: *default-logging
     restart: unless-stopped
 
