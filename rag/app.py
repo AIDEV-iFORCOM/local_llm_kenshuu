@@ -3,7 +3,21 @@ from fastapi import FastAPI, HTTPException
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 import torch
+import logging
+import os
+from logging.handles import RotatingFileHandler
+# --- LOGGING SETUP ---
+LOG_DIR = "/logs"
+os.makedirs(LOG_DIR, exist_ok=True)
+logger = logging.getLogger("RAG-Service")
+logger.setLevel(logging.INFO)
 
+# Rotation: 5MB max size, keep 5 backups
+handler = RotatingFileHandler(os.path.join(LOG_DIR, "rag.log"), maxBytes=5*1024*1024, backupCount=5)
+handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+logger.addHandler(handler)
+logger.addHandler(logging.StreamHandler())
+# ----------------------
 app = FastAPI(title="RAG Vector Search")
 
 BASE = Path("/vectordb")
