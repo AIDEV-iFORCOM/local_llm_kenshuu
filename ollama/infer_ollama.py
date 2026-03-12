@@ -2,17 +2,6 @@ import os
 import httpx
 from fastapi import FastAPI, Request
 from fastapi.responses import Response, StreamingResponse
-import logging
-from logging.handlers import RotatingFileHandler
-#LoG update
-LOG_DIR = "/logs"
-os.makedirs(LOG_DIR, exist_ok=True)
-logger = logging.getLogger("Ollama-Proxy")
-logger.setLevel(logging.INFO)
-handler = RotatingFileHandler(os.path.join(LOG_DIR, "proxy.log"), maxBytes=5*1024*1024, backupCount=5)
-handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-logger.addHandler(handler)
-# ------------------
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")
 RAG_URL = os.getenv("RAG_URL", "http://rag:8000")
 TOP_K = int(os.getenv("RAG_TOP_K", "5"))
