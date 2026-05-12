@@ -9,11 +9,12 @@ services:
       - ./models:/models:ro
     restart: unless-stopped
     command: ["serve"]
+    gpus: all
     logging: &default-logging
       driver: "json-file"
       options:
         max-size: "10m"
-        max-file: "3"   #logs update
+        max-file: "3"
     healthcheck:
       test: ["CMD", "ollama", "list"]
       interval: 5s
@@ -42,10 +43,12 @@ services:
     build: ./rag
     container_name: rag
     ports:
-      - "8001:8000"
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1 # Ensures logs show up immediately
     volumes:
       - ./vectordb:/vectordb:ro
-      - ./logs/rag:/logs
+      - ./logs/rag:/logs    # Mapped to /logs in Python code
     logging: *default-logging
     restart: unless-stopped
 
@@ -58,14 +61,15 @@ services:
     environment:
       - OLLAMA_URL=http://ollama:11434
       - RAG_URL=http://rag:8000
-        #- RAG_TOP_K=5
+      - PYTHONUNBUFFERED=1 # Ensures logs show up immediately
     volumes:
       - ./ollama/infer_ollama.py:/app/app.py:ro
-      - ./logs/ollama:/logs
+      - ./logs/ollama:/logs # Mapped to /logs in Python code
     working_dir: /app
+    logging: *default-logging
     command: >
       sh -lc "pip install --no-cache-dir fastapi uvicorn httpx &&
-              uvicorn app:app --host 0.0.0.0 --port 11434"
+              uvicorn app:app --host 0.0.0.0 --port 11434 --reload --reload-dir /app"
     restart: unless-stopped
 
   open-webui:
@@ -74,7 +78,7 @@ services:
     depends_on:
       - ollama-proxy
     ports:
-      - "7002:8080"
+      - "8080:8080"
     environment:
       - OLLAMA_BASE_URL=http://ollama-proxy:11434
       - WEBUI_AUTH=False
@@ -82,7 +86,6 @@ services:
       - WEBUI_SECRET_KEY=training_secret
     volumes:
       - ./open-webui-data:/app/backend/data
-      - ./logs/docker:/var/log/webui # Optional: map internal logs
+      - ./logs/docker:/var/log/webui
     logging: *default-logging
     restart: unless-stopped
-
